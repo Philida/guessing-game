@@ -1,0 +1,162 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: #e2e8f0;
+}
+
+/* MAIN */
+.container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #1e293b;
+  border-radius: 16px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* TITLE */
+h2 {
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
+h3 {
+  color: #e2e8f0;
+}
+
+/* INPUT */
+input {
+  width: 85%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: none;
+  background: #334155;
+  color: white;
+  font-size: 14px;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+
+/* BUTTON */
+button {
+  padding: 12px 20px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #020617;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* PLAYER LIST */
+.player-list {
+  margin-top: 15px;
+}
+
+.player {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  margin: 6px 0;
+  background: #334155;
+  border-radius: 8px;
+}
+
+/* 👑 Game Master Highlight */
+.player.master {
+  border: 2px solid gold;
+}
+
+/* 🟢 ONLINE DOT */
+.status {
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* QUESTION BOX */
+.question-box {
+  background: #020617;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+  border: 1px solid #334155;
+}
+
+/* ⏱ TIMER */
+.timer {
+  font-size: 18px;
+  font-weight: bold;
+  color: #facc15;
+  margin-bottom: 10px;
+}
+
+/* 💬 GAME LOG */
+.log-box {
+  margin-top: 20px;
+  border: 1px solid #334155;
+  padding: 10px;
+  height: 200px;
+  overflow-y: auto;
+  background: #020617;
+  border-radius: 10px;
+  text-align: left;
+}
+
+/* MESSAGES */
+.message {
+  margin-bottom: 6px;
+}
+
+.message.system {
+  color: #94a3b8;
+}
+
+.message.win {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.message.error {
+  color: #ef4444;
+}
+
+.message.player {
+  color: #38bdf8;
+}
+
+/* 🏆 WINNER BANNER */
+.winner-banner {
+  background: #22c55e;
+  color: black;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+  font-weight: bold;
+  animation: pop 0.4s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
