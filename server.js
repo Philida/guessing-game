@@ -8,11 +8,16 @@ app.use(cors());
 
 const server = http.createServer(app);
 
+// ✅ IMPORTANT: better CORS for production
 const io = new Server(server, {
   cors: {
     origin: "*",
+    methods: ["GET", "POST"],
   },
 });
+
+// ✅ REQUIRED FOR RENDER
+const PORT = process.env.PORT || 3000;
 
 let sessions = {};
 
@@ -92,7 +97,7 @@ io.on("connection", (socket) => {
       clearTimeout(session.timer);
     }
 
-    // start timer
+    // start timer (60s)
     session.timer = setTimeout(() => {
       if (session.status === "in_progress") {
         session.status = "ended";
@@ -114,7 +119,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  // SUBMIT GUESS (FIXED)
+  // SUBMIT GUESS
   socket.on("submit_guess", ({ sessionId, guess }) => {
     const session = sessions[sessionId];
     if (!session || session.status !== "in_progress") return;
@@ -125,13 +130,13 @@ io.on("connection", (socket) => {
     if (!session.attempts[playerId] || session.attempts[playerId] <= 0)
       return;
 
-    // 🔥 SHOW GUESS TO EVERYONE
+    // 🔥 show guess to everyone
     io.to(sessionId).emit("player_guessed", {
       username: player?.username,
       guess,
     });
 
-    // ✅ CORRECT GUESS
+    // ✅ correct guess
     if (guess.toLowerCase() === session.answer) {
       session.status = "ended";
 
@@ -155,7 +160,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // ❌ WRONG GUESS
+    // ❌ wrong guess
     session.attempts[playerId]--;
 
     io.to(socket.id).emit("guess_result", {
@@ -192,6 +197,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("Server running on port 3000");
+// ✅ START SERVER
+server.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
