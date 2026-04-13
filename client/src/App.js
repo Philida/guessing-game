@@ -35,7 +35,7 @@ function App() {
     };
   }, []);
 
-  const isGameMaster = myId === gameMaster;
+  const isGameMaster = myId && gameMaster && myId === gameMaster;
 
   // ✅ Auto-scroll chat
   useEffect(() => {
@@ -91,6 +91,7 @@ function App() {
       setMessages((prev) => [
         ...prev,
         { text: `🏆 ${data.winner} won! Answer: ${data.answer}`, type: "win" },
+        { text: "👉 New round starting...", type: "system" },
       ]);
 
       setCurrentQuestion("");

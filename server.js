@@ -19,6 +19,15 @@ const PORT = process.env.PORT || 3000;
 
 let sessions = {};
 
+// 👑 helper
+function getNextGameMaster(session) {
+  const currentIndex = session.players.findIndex(
+    (p) => p.id === session.gameMaster
+  );
+  const nextIndex = (currentIndex + 1) % session.players.length;
+  return session.players[nextIndex].id;
+}
+
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
@@ -26,7 +35,7 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // JOIN SESSION
+  // JOIN
   socket.on("join_session", ({ username, sessionId }) => {
     if (!sessions[sessionId]) {
       sessions[sessionId] = {
@@ -42,11 +51,8 @@ io.on("connection", (socket) => {
 
     const session = sessions[sessionId];
 
-    const existingPlayer = session.players.find(
-      (p) => p.id === socket.id
-    );
-
-    if (!existingPlayer) {
+    const exists = session.players.find((p) => p.id === socket.id);
+    if (!exists) {
       session.players.push({
         id: socket.id,
         username,
@@ -71,7 +77,6 @@ io.on("connection", (socket) => {
     const session = sessions[sessionId];
     if (!session) return;
 
-    // ✅ VALIDATION (FIXED)
     if (!question || !answer) {
       io.to(socket.id).emit("error_message", "Enter question and answer");
       return;
@@ -96,9 +101,7 @@ io.on("connection", (socket) => {
       session.attempts[p.id] = 3;
     });
 
-    if (session.timer) {
-      clearTimeout(session.timer);
-    }
+    if (session.timer) clearTimeout(session.timer);
 
     session.timer = setTimeout(() => {
       if (session.status === "in_progress") {
@@ -108,10 +111,19 @@ io.on("connection", (socket) => {
           answer: session.answer,
         });
 
+        // 🔥 rotate GM
+        session.gameMaster = getNextGameMaster(session);
+
+        // reset
         session.status = "waiting";
         session.question = "";
         session.answer = "";
         session.timer = null;
+
+        io.to(sessionId).emit("player_list", {
+          players: session.players,
+          gameMaster: session.gameMaster,
+        });
       }
     }, 60000);
 
@@ -120,15 +132,14 @@ io.on("connection", (socket) => {
     });
   });
 
-  // SUBMIT GUESS
+  // GUESS
   socket.on("submit_guess", ({ sessionId, guess }) => {
     const session = sessions[sessionId];
     if (!session || session.status !== "in_progress") return;
 
-    const playerId = socket.id;
-    const player = session.players.find((p) => p.id === playerId);
+    const player = session.players.find((p) => p.id === socket.id);
 
-    if (!session.attempts[playerId] || session.attempts[playerId] <= 0)
+    if (!session.attempts[socket.id] || session.attempts[socket.id] <= 0)
       return;
 
     io.to(sessionId).emit("player_guessed", {
@@ -151,27 +162,33 @@ io.on("connection", (socket) => {
         answer: session.answer,
       });
 
+      // 🔥 rotate GM
+      session.gameMaster = getNextGameMaster(session);
+
+      // reset
       session.status = "waiting";
       session.question = "";
       session.answer = "";
 
+      io.to(sessionId).emit("player_list", {
+        players: session.players,
+        gameMaster: session.gameMaster,
+      });
+
       return;
     }
 
-    session.attempts[playerId]--;
+    session.attempts[socket.id]--;
 
     io.to(socket.id).emit("guess_result", {
-      correct: false,
-      attemptsLeft: session.attempts[playerId],
+      attemptsLeft: session.attempts[socket.id],
     });
   });
 
   // DISCONNECT
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-
     for (let sessionId in sessions) {
-      let session = sessions[sessionId];
+      const session = sessions[sessionId];
 
       session.players = session.players.filter(
         (p) => p.id !== socket.id
@@ -193,7 +210,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// START SERVER
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
