@@ -8,7 +8,6 @@ app.use(cors());
 
 const server = http.createServer(app);
 
-// ✅ IMPORTANT: better CORS for production
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -16,7 +15,6 @@ const io = new Server(server, {
   },
 });
 
-// ✅ REQUIRED FOR RENDER
 const PORT = process.env.PORT || 3000;
 
 let sessions = {};
@@ -44,7 +42,6 @@ io.on("connection", (socket) => {
 
     const session = sessions[sessionId];
 
-    // prevent duplicate players
     const existingPlayer = session.players.find(
       (p) => p.id === socket.id
     );
@@ -57,7 +54,6 @@ io.on("connection", (socket) => {
       });
     }
 
-    // assign game master
     if (!session.gameMaster) {
       session.gameMaster = socket.id;
     }
@@ -75,7 +71,16 @@ io.on("connection", (socket) => {
     const session = sessions[sessionId];
     if (!session) return;
 
-    if (session.gameMaster !== socket.id) return;
+    // ✅ VALIDATION (FIXED)
+    if (!question || !answer) {
+      io.to(socket.id).emit("error_message", "Enter question and answer");
+      return;
+    }
+
+    if (session.gameMaster !== socket.id) {
+      io.to(socket.id).emit("error_message", "Only game master can start");
+      return;
+    }
 
     if (session.players.length <= 2) {
       io.to(socket.id).emit("error_message", "Need more than 2 players");
@@ -86,18 +91,15 @@ io.on("connection", (socket) => {
     session.question = question;
     session.answer = answer.toLowerCase();
 
-    // reset attempts
     session.attempts = {};
     session.players.forEach((p) => {
       session.attempts[p.id] = 3;
     });
 
-    // clear old timer
     if (session.timer) {
       clearTimeout(session.timer);
     }
 
-    // start timer (60s)
     session.timer = setTimeout(() => {
       if (session.status === "in_progress") {
         session.status = "ended";
@@ -106,7 +108,6 @@ io.on("connection", (socket) => {
           answer: session.answer,
         });
 
-        // reset game
         session.status = "waiting";
         session.question = "";
         session.answer = "";
@@ -130,13 +131,11 @@ io.on("connection", (socket) => {
     if (!session.attempts[playerId] || session.attempts[playerId] <= 0)
       return;
 
-    // 🔥 show guess to everyone
     io.to(sessionId).emit("player_guessed", {
       username: player?.username,
       guess,
     });
 
-    // ✅ correct guess
     if (guess.toLowerCase() === session.answer) {
       session.status = "ended";
 
@@ -152,7 +151,6 @@ io.on("connection", (socket) => {
         answer: session.answer,
       });
 
-      // reset game
       session.status = "waiting";
       session.question = "";
       session.answer = "";
@@ -160,7 +158,6 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // ❌ wrong guess
     session.attempts[playerId]--;
 
     io.to(socket.id).emit("guess_result", {
@@ -183,7 +180,6 @@ io.on("connection", (socket) => {
       if (session.players.length === 0) {
         delete sessions[sessionId];
       } else {
-        // reassign game master
         if (session.gameMaster === socket.id) {
           session.gameMaster = session.players[0].id;
         }
@@ -197,7 +193,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ START SERVER
+// START SERVER
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });

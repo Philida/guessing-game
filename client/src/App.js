@@ -42,7 +42,7 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ✅ Timer logic (SEPARATE useEffect)
+  // ✅ Timer
   useEffect(() => {
     if (!currentQuestion) return;
 
@@ -106,6 +106,10 @@ function App() {
       ]);
     });
 
+    socket.on("error_message", (msg) => {
+      alert(msg);
+    });
+
     socket.on("game_over", (data) => {
       setMessages((prev) => [
         ...prev,
@@ -123,6 +127,7 @@ function App() {
       socket.off("game_won");
       socket.off("guess_result");
       socket.off("game_over");
+      socket.off("error_message");
     };
   }, []);
 
@@ -189,13 +194,24 @@ function App() {
               <br /><br />
 
               <button
-                onClick={() =>
+                onClick={() => {
+                  console.log("START GAME DATA:", {
+                    sessionId,
+                    question,
+                    answer,
+                  });
+
+                  if (!question || !answer) {
+                    alert("Enter question and answer");
+                    return;
+                  }
+
                   socket.emit("start_game", {
                     sessionId,
                     question,
                     answer,
-                  })
-                }
+                  });
+                }}
               >
                 Start Game
               </button>
